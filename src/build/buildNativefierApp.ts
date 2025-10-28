@@ -47,12 +47,14 @@ async function copyIconsIfNecessary(
     if (options.nativefier.tray !== 'false') {
       //tray icon needs to be .png
       log.debug('Copying icon for tray application');
-      const trayIconFileName = `tray-icon.png`;
-      const destIconPath = path.join(appPath, 'icon.png');
-      await fs.copy(
-        `${path.dirname(options.packager.icon)}/${trayIconFileName}`,
-        destIconPath,
-      );
+      if (options.packager.icon) {
+        const trayIconFileName = `tray-icon.png`;
+        const destIconPath = path.join(appPath, 'icon.png');
+        await fs.copy(
+          `${path.dirname(options.packager.icon)}/${trayIconFileName}`,
+          destIconPath,
+        );
+      }
     } else {
       log.debug('No copying necessary on macOS; aborting');
     }
@@ -60,11 +62,17 @@ async function copyIconsIfNecessary(
   }
 
   // windows & linux: put the icon file into the app
-  const destFileName = `icon${path.extname(options.packager.icon)}`;
+  if (!options.packager.icon) {
+    log.warn('No icon path found, skipping icon copy');
+    return;
+  }
+
+  const iconPath = options.packager.icon;
+  const destFileName = `icon${path.extname(iconPath)}`;
   const destIconPath = path.join(appPath, destFileName);
 
-  log.debug(`Copying icon ${options.packager.icon} to`, destIconPath);
-  await fs.copy(options.packager.icon, destIconPath);
+  log.debug(`Copying icon ${iconPath} to`, destIconPath);
+  await fs.copy(iconPath, destIconPath);
 }
 
 /**

@@ -22,7 +22,7 @@ export function initContextMenu(
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   contextMenu({
-    prepend: (actions: contextMenu.Actions, params: ContextMenuParams) => {
+    prepend: (actions: any, params: ContextMenuParams) => {
       log.debug('contextMenu.prepend', { actions, params });
       const items = [];
       if (params.linkURL && window) {

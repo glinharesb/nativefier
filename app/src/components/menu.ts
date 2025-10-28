@@ -2,8 +2,10 @@ import * as fs from 'fs';
 import path from 'path';
 
 import {
+  BaseWindow,
   BrowserWindow,
   clipboard,
+  KeyboardEvent,
   Menu,
   MenuItem,
   MenuItemConstructorOptions,
@@ -130,8 +132,10 @@ export function generateMenu(
         label: 'Clear App Data',
         click: (
           item: MenuItem,
-          focusedWindow: BrowserWindow | undefined,
+          window: BaseWindow | undefined,
+          event: KeyboardEvent,
         ): void => {
+          let focusedWindow = window as BrowserWindow | undefined;
           log.debug('Clear App Data.click', {
             item,
             focusedWindow,
@@ -189,8 +193,10 @@ export function generateMenu(
         visible: mainWindow.isFullScreenable() || isOSX(),
         click: (
           item: MenuItem,
-          focusedWindow: BrowserWindow | undefined,
+          window: BaseWindow | undefined,
+          event: KeyboardEvent,
         ): void => {
+          let focusedWindow = window as BrowserWindow | undefined;
           log.debug('Toggle Full Screen.click()', {
             item,
             focusedWindow,
@@ -256,7 +262,12 @@ export function generateMenu(
       {
         label: 'Toggle Developer Tools',
         accelerator: isOSX() ? 'Alt+Cmd+I' : 'Ctrl+Shift+I',
-        click: (item: MenuItem, focusedWindow: BrowserWindow | undefined) => {
+        click: (
+          item: MenuItem,
+          window: BaseWindow | undefined,
+          event: KeyboardEvent,
+        ) => {
+          let focusedWindow = window as BrowserWindow | undefined;
           log.debug('Toggle Developer Tools.click()', { item, focusedWindow });
           if (!focusedWindow) {
             focusedWindow = mainWindow;

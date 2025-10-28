@@ -191,14 +191,16 @@ export function getDefaultWindowOptions(
 export function goBack(): void {
   log.debug('onGoBack');
   withFocusedWindow((focusedWindow) => {
-    focusedWindow.webContents.goBack();
+    // Updated for Electron 32+ - navigation APIs moved to navigationHistory
+    focusedWindow.webContents.navigationHistory.goBack();
   });
 }
 
 export function goForward(): void {
   log.debug('onGoForward');
   withFocusedWindow((focusedWindow) => {
-    focusedWindow.webContents.goForward();
+    // Updated for Electron 32+ - navigation APIs moved to navigationHistory
+    focusedWindow.webContents.navigationHistory.goForward();
   });
 }
 

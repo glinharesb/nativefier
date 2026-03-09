@@ -84,11 +84,47 @@ export function onNewWindowHelper(
     // Some sites use about:blank#something to use as placeholder windows to fill
     // with content via JavaScript. So we'll stay specific for now...
     else if (['about:blank', 'about:blank#blocked'].includes(details.url)) {
-      createAboutBlankWindow(
+      const window = createAboutBlankWindow(
         options,
         setupWindow,
         nativeTabsSupported() ? undefined : parent,
       );
+      // Intercept navigation attempts from the about:blank window
+      window.webContents.setWindowOpenHandler((newDetails: HandlerDetails) => {
+        // If the next navigation is external, open it externally and close the about:blank window
+        if (
+          !linkIsInternal(
+            options.targetUrl,
+            newDetails.url,
+            options.internalUrls,
+            options.strictInternalUrls,
+          )
+        ) {
+          openExternal(newDetails.url).catch((err: unknown) => {
+            log.error('openExternal from about:blank', err);
+          });
+          window.close();
+          return { action: 'deny' };
+        }
+        return onNewWindow(options, setupWindow, newDetails, window);
+      });
+      // Also intercept direct navigation (not new-window)
+      window.webContents.on('will-navigate', (event: Event, url: string) => {
+        if (
+          !linkIsInternal(
+            options.targetUrl,
+            url,
+            options.internalUrls,
+            options.strictInternalUrls,
+          )
+        ) {
+          event.preventDefault();
+          openExternal(url).catch((err: unknown) => {
+            log.error('openExternal from about:blank will-navigate', err);
+          });
+          window.close();
+        }
+      });
       return { action: 'deny' };
     } else if (nativeTabsSupported()) {
       createNewTab(

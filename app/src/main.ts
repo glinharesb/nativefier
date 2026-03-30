@@ -1,5 +1,6 @@
 import 'source-map-support/register';
 
+import { execSync } from 'child_process';
 import fs from 'fs';
 import * as path from 'path';
 
@@ -21,6 +22,7 @@ import {
 } from './components/mainWindow';
 import { createTrayIcon } from './components/trayIcon';
 import {
+  isLinux,
   isOSX,
   isWayland,
   isWindows,
@@ -189,16 +191,40 @@ if (appArgs.lang) {
 }
 
 let currentBadgeCount = 0;
-const setDockBadge = isOSX()
-  ? (count?: number | string, bounce = false): void => {
-      if (count !== undefined) {
-        app.dock?.setBadge(count.toString());
-        if (bounce && typeof count === 'number' && count > currentBadgeCount)
-          app.dock?.bounce();
-        currentBadgeCount = typeof count === 'number' ? count : 0;
-      }
+const setDockBadge = (count?: number | string, bounce = false): void => {
+  if (count === undefined) {
+    return;
+  }
+
+  if (isOSX()) {
+    app.dock?.setBadge(count.toString());
+    if (bounce && typeof count === 'number' && count > currentBadgeCount)
+      app.dock?.bounce();
+    currentBadgeCount = typeof count === 'number' ? count : 0;
+  } else if (isLinux()) {
+    let badgeNum: number;
+    if (typeof count === 'number') {
+      badgeNum = count;
+    } else if (count === '') {
+      badgeNum = 0;
+    } else {
+      const parsed = parseInt(count, 10);
+      badgeNum = isNaN(parsed) ? 1 : parsed;
     }
-  : (): void => undefined;
+    const appName = app.getName();
+    const objectPath = '/' + appName.replace(/[^a-zA-Z0-9]/g, '_');
+    const desktopUri = `application://${appName}.desktop`;
+    const visible = badgeNum > 0 ? 'true' : 'false';
+    try {
+      execSync(
+        `gdbus emit --session --object-path ${objectPath} --signal com.canonical.Unity.LauncherEntry.Update "${desktopUri}" "{'count': <int64 ${badgeNum}>, 'count-visible': <${visible}>}"`,
+      );
+    } catch (e) {
+      log.debug('gdbus badge failed', e);
+    }
+    currentBadgeCount = badgeNum;
+  }
+};
 
 app.on('window-all-closed', () => {
   log.debug('app.window-all-closed');

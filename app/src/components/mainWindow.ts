@@ -15,6 +15,7 @@ import { createMenu } from './menu';
 import {
   getAppIcon,
   getCounterValue,
+  isLinux,
   isOSX,
   nativeTabsSupported,
 } from '../helpers/helpers';
@@ -250,7 +251,7 @@ function setupNotificationBadge(
 ): void {
   ipcMain.on('notification', () => {
     log.debug('ipcMain.notification');
-    if (!isOSX() || window.isFocused()) {
+    if ((!isOSX() && !isLinux()) || window.isFocused()) {
       return;
     }
     setDockBadge('•', options.bounce);

@@ -64,6 +64,11 @@ export async function createMainWindow(
     defaultHeight: options.height || 800,
   });
 
+  const windowOptions = outputOptionsToWindowOptions(
+    options,
+    nativeTabsSupported(),
+  );
+
   const mainWindow = new BrowserWindow({
     frame: !options.hideWindowFrame,
     width: mainWindowState.width,
@@ -85,9 +90,7 @@ export async function createMainWindow(
     // So, we manually mainWindow.show() later, see a few lines below
     show: options.tray !== 'start-in-tray' && process.platform !== 'win32',
     backgroundColor: options.backgroundColor,
-    ...getDefaultWindowOptions(
-      outputOptionsToWindowOptions(options, nativeTabsSupported()),
-    ),
+    ...getDefaultWindowOptions(windowOptions),
   });
 
   // Just load about:blank to start, gives playwright something to latch onto initially for testing.
@@ -111,10 +114,6 @@ export async function createMainWindow(
     mainWindow.show();
   }
 
-  const windowOptions = outputOptionsToWindowOptions(
-    options,
-    nativeTabsSupported(),
-  );
   createMenu(options, mainWindow);
   createContextMenu(options, mainWindow);
   setupNativefierWindow(windowOptions, mainWindow);

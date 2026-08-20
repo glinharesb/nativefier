@@ -13,7 +13,6 @@ import {
 import { getCSSToInject, isOSX, nativeTabsSupported } from './helpers';
 import * as log from './loggingHelper';
 import { TrayValue, WindowOptions } from '../../../shared/src/options/model';
-import { randomUUID } from 'crypto';
 
 const ZOOM_INTERVAL = 0.1;
 
@@ -165,8 +164,11 @@ export function getDefaultWindowOptions(
   const defaultOptions: BrowserWindowConstructorOptions = {
     autoHideMenuBar: options.autoHideMenuBar,
     fullscreenable: true,
+    // Never generate one here: each call would hand out a different identifier
+    // and native tabs would refuse to group the windows together.
+    // outputOptionsToWindowOptions is the single place that generates it.
     tabbingIdentifier: nativeTabsSupported()
-      ? options.tabbingIdentifier ?? randomUUID()
+      ? options.tabbingIdentifier
       : undefined,
     title: options.name,
     webPreferences: {

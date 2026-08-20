@@ -4,11 +4,12 @@ import { error } from 'loglevel';
 import { WindowOptions } from '../../../shared/src/options/model';
 
 jest.mock('./helpers');
-import { getCSSToInject, isOSX } from './helpers';
+import { getCSSToInject, isOSX, nativeTabsSupported } from './helpers';
 jest.mock('./windowEvents');
 import {
   clearAppData,
   createNewTab,
+  getDefaultWindowOptions,
   hideWindow,
   injectCSS,
   setIsQuitting,
@@ -334,5 +335,39 @@ describe('hideWindow', () => {
 
     expect(preventDefault).not.toHaveBeenCalled();
     expect(mockHide).not.toHaveBeenCalled();
+  });
+});
+
+describe('getDefaultWindowOptions', () => {
+  const mockNativeTabsSupported = nativeTabsSupported as jest.Mock;
+
+  const baseOptions = {
+    autoHideMenuBar: false,
+    insecure: false,
+    name: 'Test App',
+    targetUrl: 'https://example.com',
+    zoom: 1.0,
+  } as unknown as WindowOptions;
+
+  test('keeps the tabbing identifier it was handed', () => {
+    mockNativeTabsSupported.mockReturnValue(true);
+
+    const options = getDefaultWindowOptions({
+      ...baseOptions,
+      tabbingIdentifier: 'shared-identifier',
+    });
+
+    expect(options.tabbingIdentifier).toBe('shared-identifier');
+  });
+
+  test('does not invent a tabbing identifier when given none', () => {
+    // Generating one here would hand every window a different identifier,
+    // so native tabs would refuse to group them. outputOptionsToWindowOptions
+    // is the single place allowed to generate it.
+    mockNativeTabsSupported.mockReturnValue(true);
+
+    const options = getDefaultWindowOptions({ ...baseOptions });
+
+    expect(options.tabbingIdentifier).toBeUndefined();
   });
 });

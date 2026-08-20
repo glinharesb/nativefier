@@ -12,7 +12,7 @@
   ],
   "scripts": {},
   "dependencies": {
-    "electron-context-menu": "^4.1.1",
+    "electron-context-menu": "^4.1.2",
     "electron-dl": "^4.0.0",
     "electron-squirrel-startup": "^1.0.0",
     "electron-window-state": "^5.0.3",
@@ -20,6 +20,6 @@
     "source-map-support": "^0.5.21"
   },
   "devDependencies": {
-    "electron": "^38.3.0"
+    "electron": "^38.8.6"
   }
 }

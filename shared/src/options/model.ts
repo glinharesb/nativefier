@@ -36,7 +36,6 @@ export interface AppOptions {
     disableContextMenu: boolean;
     disableDevTools: boolean;
     disableGpu: boolean;
-    disableOldBuildWarning: boolean;
     diskCacheSize?: number;
     electronVersionUsed?: string;
     enableEs3Apis: boolean;
@@ -108,7 +107,6 @@ export type NativefierOptions = Partial<
 export type OutputOptions = NativefierOptions & {
   blockExternalUrls: boolean;
   browserwindowOptions?: BrowserWindowOptions;
-  buildDate: number;
   companyName?: string;
   disableDevTools: boolean;
   fileDownloadOptions?: Record<string, unknown>;
@@ -116,7 +114,6 @@ export type OutputOptions = NativefierOptions & {
   isUpgrade: boolean;
   name: string;
   nativefierVersion: string;
-  oldBuildWarningText: string;
   strictInternalUrls: boolean;
   tabbingIdentifier?: string;
   targetUrl: string;
@@ -151,8 +148,6 @@ export type RawOptions = {
   disableContextMenu?: boolean;
   disableDevTools?: boolean;
   disableGpu?: boolean;
-  disableOldBuildWarning?: boolean;
-  disableOldBuildWarningYesiknowitisinsecure?: boolean;
   diskCacheSize?: number;
   electronVersion?: string;
   electronVersionUsed?: string;

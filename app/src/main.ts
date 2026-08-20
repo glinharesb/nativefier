@@ -106,7 +106,6 @@ if (urlArgv.length > 0) {
   }
 }
 
-
 const fileDownloadOptions = { ...appArgs.fileDownloadOptions };
 electronDownload(fileDownloadOptions);
 

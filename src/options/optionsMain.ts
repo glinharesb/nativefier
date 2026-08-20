@@ -83,8 +83,6 @@ export async function getOptions(rawOptions: RawOptions): Promise<AppOptions> {
       disableDevTools: rawOptions.disableDevTools ?? false,
       disableGpu: rawOptions.disableGpu ?? false,
       diskCacheSize: rawOptions.diskCacheSize,
-      disableOldBuildWarning:
-        rawOptions.disableOldBuildWarningYesiknowitisinsecure ?? false,
       enableEs3Apis: rawOptions.enableEs3Apis ?? false,
       fastQuit: rawOptions.fastQuit ?? false,
       fileDownloadOptions: rawOptions.fileDownloadOptions,

@@ -416,12 +416,6 @@ export function initArgs(argv: string[]): yargs.Argv<RawOptions> {
       decorateYargOptionGroup('Graphics Options'),
     )
     // (In)Security Options
-    .option('disable-old-build-warning-yesiknowitisinsecure', {
-      default: false,
-      description:
-        'disable warning shown when opening an app made too long ago; Nativefier uses the Chrome browser (through Electron), and it is dangerous to keep using an old version of it',
-      type: 'boolean',
-    })
     .option('ignore-certificate', {
       default: false,
       description: 'ignore certificate-related errors',
@@ -433,11 +427,7 @@ export function initArgs(argv: string[]): yargs.Argv<RawOptions> {
       type: 'boolean',
     })
     .group(
-      [
-        'disable-old-build-warning-yesiknowitisinsecure',
-        'ignore-certificate',
-        'insecure',
-      ],
+      ['ignore-certificate', 'insecure'],
       decorateYargOptionGroup('(In)Security Options'),
     )
     // Flash Options (DEPRECATED)

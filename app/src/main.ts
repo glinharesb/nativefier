@@ -30,6 +30,7 @@ import {
   removeUserAgentSpecifics,
 } from './helpers/helpers';
 import { inferFlashPath } from './helpers/inferFlash';
+import { onOpenUrl } from './helpers/windowEvents';
 import * as log from './helpers/loggingHelper';
 import {
   IS_PLAYWRIGHT,
@@ -255,13 +256,23 @@ app.on('will-finish-launching', () => {
   log.debug('app.will-finish-launching');
 });
 
+// macOS can hand us a URL for one of our registered protocols before the app
+// is ready, on a cold launch. Hold onto it until onReady() has built a window.
+let pendingOpenUrl: string | undefined;
+
 app.on('open-url', (event, url) => {
   log.debug('app.open-url', { event, url });
 
   event.preventDefault();
-  if (mainWindow) {
-    mainWindow.webContents.send('open-url', url);
+
+  if (!mainWindow) {
+    pendingOpenUrl = url;
+    return;
   }
+
+  onOpenUrl(appArgs, mainWindow, url).catch((err) =>
+    log.error('onOpenUrl ERROR', err),
+  );
 });
 
 if (appArgs.widevine) {
@@ -424,6 +435,12 @@ async function onReady(): Promise<void> {
 
   if (appArgs.targetUrl) {
     await mainWindow.loadURL(appArgs.targetUrl);
+  }
+
+  if (pendingOpenUrl) {
+    const url = pendingOpenUrl;
+    pendingOpenUrl = undefined;
+    await onOpenUrl(appArgs, mainWindow, url);
   }
 }
 

@@ -10,6 +10,7 @@ const {
   onNewWindowHelper,
   onWillNavigate,
   onWillPreventUnload,
+  onOpenUrl,
   setupNativefierWindow,
 }: {
   onNewWindowHelper: (
@@ -28,6 +29,11 @@ const {
     urlToGo: string,
   ) => Promise<void>;
   onWillPreventUnload: (event: unknown) => void;
+  onOpenUrl: (
+    options: WindowOptions,
+    window: BrowserWindow,
+    url: string,
+  ) => Promise<void>;
   setupNativefierWindow: (
     options: WindowOptions,
     window: BrowserWindow,
@@ -398,5 +404,65 @@ describe('setupNativefierWindow swipe navigation', () => {
 
     expect(goBack).not.toHaveBeenCalled();
     expect(goForward).not.toHaveBeenCalled();
+  });
+});
+
+describe('onOpenUrl', () => {
+  const options: WindowOptions = {
+    blockExternalUrls: false,
+    insecure: false,
+    internalUrls: undefined,
+    name: 'Test App',
+    strictInternalUrls: false,
+    targetUrl: 'https://example.com',
+    zoom: 1.0,
+  } as unknown as WindowOptions;
+
+  let window: BrowserWindow;
+  let mockLoadURL: jest.SpyInstance;
+
+  beforeEach(() => {
+    window = new BrowserWindow();
+    mockLoadURL = jest.spyOn(window, 'loadURL').mockResolvedValue(undefined);
+    (linkIsInternal as jest.Mock).mockReset();
+    (openExternal as jest.Mock).mockReset();
+    (openExternal as jest.Mock).mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    mockLoadURL.mockRestore();
+  });
+
+  test('loads an internal deep link in the window', async () => {
+    (linkIsInternal as jest.Mock).mockReturnValue(true);
+
+    await onOpenUrl(options, window, 'https://example.com/deep/link');
+
+    expect(mockLoadURL).toHaveBeenCalledWith('https://example.com/deep/link');
+    expect(openExternal).not.toHaveBeenCalled();
+  });
+
+  test('hands an external deep link to the default browser', async () => {
+    (linkIsInternal as jest.Mock).mockReturnValue(false);
+
+    await onOpenUrl(options, window, 'https://elsewhere.example/page');
+
+    expect(openExternal).toHaveBeenCalledWith(
+      'https://elsewhere.example/page',
+    );
+    expect(mockLoadURL).not.toHaveBeenCalled();
+  });
+
+  test('blocks an external deep link when blockExternalUrls is set', async () => {
+    (linkIsInternal as jest.Mock).mockReturnValue(false);
+
+    await onOpenUrl(
+      { ...options, blockExternalUrls: true },
+      window,
+      'https://elsewhere.example/page',
+    );
+
+    expect(openExternal).not.toHaveBeenCalled();
+    expect(mockLoadURL).not.toHaveBeenCalled();
   });
 });

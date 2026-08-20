@@ -236,3 +236,42 @@ export function setupNativefierWindow(
 
   sendParamsOnDidFinishLoad(options, window);
 }
+
+/**
+ * Handles a URL the OS handed us for one of our registered protocols
+ * (macOS `open-url`). Internal links load in the app, external ones go to the
+ * default browser, unless the user asked for external links to be blocked.
+ */
+type NavigationOptions = Pick<
+  WindowOptions,
+  'blockExternalUrls' | 'internalUrls' | 'strictInternalUrls' | 'targetUrl'
+>;
+
+export async function onOpenUrl(
+  options: NavigationOptions,
+  window: BrowserWindow,
+  url: string,
+): Promise<void> {
+  log.debug('onOpenUrl', { url });
+
+  if (
+    linkIsInternal(
+      options.targetUrl,
+      url,
+      options.internalUrls,
+      options.strictInternalUrls,
+    )
+  ) {
+    await window.loadURL(url);
+    return;
+  }
+
+  if (options.blockExternalUrls) {
+    await showNavigationBlockedMessage(
+      `Navigation to external URL blocked by options: ${url}`,
+    );
+    return;
+  }
+
+  await openExternal(url);
+}

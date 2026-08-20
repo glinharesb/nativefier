@@ -244,7 +244,14 @@ class MockMenu {
   }
 }
 
+const mockDock = {
+  setMenu(menu: MockMenu | null): void {
+    return;
+  },
+};
+
 const mockApp = {
+  dock: mockDock,
   name: 'Test App',
   getVersion(): string {
     return '1.0.0';

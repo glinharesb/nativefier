@@ -1,5 +1,7 @@
 import { app, BrowserWindow, Menu, MenuItemConstructorOptions } from 'electron';
 
+jest.mock('fs');
+import * as fs from 'fs';
 jest.mock('../helpers/helpers');
 import { isOSX, nativeTabsSupported } from '../helpers/helpers';
 import { createMenu, generateMenu } from './menu';
@@ -316,5 +318,59 @@ describe('generateMenu find items', () => {
       ['Find Next', 'CmdOrCtrl+G'],
       ['Find Previous', 'Shift+CmdOrCtrl+G'],
     ]);
+  });
+});
+
+describe('createMenu dock menu', () => {
+  const mockIsOSX: jest.SpyInstance = isOSX as jest.Mock;
+  let window: BrowserWindow;
+  let mockSetMenu: jest.SpyInstance;
+
+  const options = {
+    name: 'My App',
+    nativefierVersion: '1.0.0',
+    targetUrl: 'https://example.com',
+    disableDevTools: false,
+  } as unknown as OutputOptions;
+
+  beforeEach(() => {
+    window = new BrowserWindow();
+    jest.spyOn(window, 'isFullScreenable').mockReturnValue(true);
+    jest.spyOn(Menu, 'setApplicationMenu').mockImplementation();
+    jest.spyOn(app, 'setAboutPanelOptions').mockImplementation();
+    mockSetMenu = jest
+      .spyOn(
+        app.dock as unknown as { setMenu: (menu: unknown) => void },
+        'setMenu',
+      )
+      .mockImplementation();
+    mockIsOSX.mockReturnValue(true);
+    (fs.existsSync as jest.Mock).mockReturnValue(true);
+    (fs.readFileSync as jest.Mock).mockReturnValue(
+      JSON.stringify({
+        menuLabel: 'Places',
+        bookmarks: [
+          { type: 'link', title: 'Inbox', url: 'https://example.com/inbox' },
+        ],
+      }),
+    );
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('puts the bookmarks in the dock menu', () => {
+    createMenu(options, window);
+
+    expect(mockSetMenu).toHaveBeenCalled();
+  });
+
+  test('leaves the dock menu alone when there are no bookmarks', () => {
+    (fs.existsSync as jest.Mock).mockReturnValue(false);
+
+    createMenu(options, window);
+
+    expect(mockSetMenu).not.toHaveBeenCalled();
   });
 });

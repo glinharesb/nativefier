@@ -73,6 +73,8 @@ export function createMenu(
 
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);
+
+  setupDockMenu();
 }
 
 export function generateMenu(
@@ -480,11 +482,11 @@ export function generateMenu(
   return menuTemplate;
 }
 
-function injectBookmarks(menuTemplate: MenuItemConstructorOptions[]): void {
+function buildBookmarksMenu(): MenuItemConstructorOptions | undefined {
   const bookmarkConfigPath = path.join(__dirname, '..', 'bookmarks.json');
 
   if (!fs.existsSync(bookmarkConfigPath)) {
-    return;
+    return undefined;
   }
 
   try {
@@ -525,13 +527,42 @@ function injectBookmarks(menuTemplate: MenuItemConstructorOptions[]): void {
             );
         }
       });
-    const bookmarksMenu: MenuItemConstructorOptions = {
+    return {
       label: bookmarksMenuConfig.menuLabel,
       submenu,
     };
-    // Insert custom bookmarks menu between menus "View" and "Window"
-    menuTemplate.splice(menuTemplate.length - 2, 0, bookmarksMenu);
   } catch (err: unknown) {
     log.error('Failed to load & parse bookmarks configuration JSON file.', err);
+    return undefined;
   }
+}
+
+function injectBookmarks(menuTemplate: MenuItemConstructorOptions[]): void {
+  const bookmarksMenu = buildBookmarksMenu();
+
+  if (!bookmarksMenu) {
+    return;
+  }
+
+  // Insert custom bookmarks menu between menus "View" and "Window"
+  menuTemplate.splice(menuTemplate.length - 2, 0, bookmarksMenu);
+}
+
+/**
+ * Puts the bookmarks behind a right-click on the macOS dock icon, where the
+ * user can reach them without the app being focused. No-op elsewhere:
+ * `app.dock` is undefined off macOS.
+ */
+function setupDockMenu(): void {
+  const bookmarksMenu = buildBookmarksMenu();
+
+  if (!app.dock || !bookmarksMenu) {
+    return;
+  }
+
+  app.dock.setMenu(
+    Menu.buildFromTemplate(
+      bookmarksMenu.submenu as MenuItemConstructorOptions[],
+    ),
+  );
 }

@@ -152,6 +152,26 @@ class MockWebRequest {
 
 class InternalEmitter extends EventEmitter {}
 
+class MockMenu {
+  static buildFromTemplate(template: unknown[]): MockMenu {
+    return new MockMenu();
+  }
+
+  static setApplicationMenu(menu: MockMenu | null): void {
+    return;
+  }
+}
+
+const mockApp = {
+  name: 'Test App',
+  getVersion(): string {
+    return '1.0.0';
+  },
+  setAboutPanelOptions(options: unknown): void {
+    return;
+  },
+};
+
 const mockShell = {
   openExternal(url: string, options?: unknown): Promise<void> {
     return new Promise((resolve) => resolve());
@@ -159,7 +179,9 @@ const mockShell = {
 };
 
 export {
+  mockApp as app,
   MockDialog as dialog,
+  MockMenu as Menu,
   MockBrowserWindow as BrowserWindow,
   MockSession as Session,
   MockWebContents as WebContents,

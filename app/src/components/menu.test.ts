@@ -1,8 +1,9 @@
-import { BrowserWindow, MenuItemConstructorOptions } from 'electron';
+import { app, BrowserWindow, Menu, MenuItemConstructorOptions } from 'electron';
 
 jest.mock('../helpers/helpers');
-import { isOSX } from '../helpers/helpers';
-import { generateMenu } from './menu';
+import { isOSX, nativeTabsSupported } from '../helpers/helpers';
+import { createMenu, generateMenu } from './menu';
+import { OutputOptions } from '../../../shared/src/options/model';
 
 describe('generateMenu', () => {
   let window: BrowserWindow;
@@ -164,4 +165,125 @@ describe('generateMenu', () => {
       expect(mockSetFullScreen).not.toHaveBeenCalled();
     },
   );
+});
+
+describe('generateMenu on macOS', () => {
+  let window: BrowserWindow;
+  const mockIsOSX: jest.SpyInstance = isOSX as jest.Mock;
+  const mockNativeTabsSupported: jest.SpyInstance =
+    nativeTabsSupported as jest.Mock;
+
+  const menuOptions = {
+    nativefierVersion: '1.0.0',
+    zoom: 1.0,
+    disableDevTools: false,
+  };
+
+  const submenuOf = (
+    menu: MenuItemConstructorOptions[],
+    label: string,
+  ): MenuItemConstructorOptions[] =>
+    menu.find((item) => item.label === label)
+      ?.submenu as MenuItemConstructorOptions[];
+
+  beforeEach(() => {
+    window = new BrowserWindow();
+    jest.spyOn(window, 'isFullScreenable').mockReturnValue(true);
+    mockIsOSX.mockReturnValue(true);
+    mockNativeTabsSupported.mockReturnValue(true);
+  });
+
+  test('opens with an About item, as the HIG requires', () => {
+    const menu = generateMenu(menuOptions, window);
+
+    const appMenu = menu[0].submenu as MenuItemConstructorOptions[];
+
+    expect(appMenu[0].role).toBe('about');
+  });
+
+  test('offers Zoom in the Window menu', () => {
+    const menu = generateMenu(menuOptions, window);
+
+    const windowMenu = submenuOf(menu, '&Window');
+
+    expect(windowMenu.filter((item) => item.role === 'zoom')).toHaveLength(1);
+  });
+
+  test('offers tab commands in the Window menu when native tabs are on', () => {
+    const menu = generateMenu(menuOptions, window);
+
+    const roles = submenuOf(menu, '&Window').map((item) => item.role);
+
+    expect(roles).toEqual(
+      expect.arrayContaining([
+        'selectNextTab',
+        'selectPreviousTab',
+        'mergeAllWindows',
+        'moveTabToNewWindow',
+      ]),
+    );
+  });
+
+  test('leaves out tab commands when native tabs are off', () => {
+    mockNativeTabsSupported.mockReturnValue(false);
+
+    const menu = generateMenu(menuOptions, window);
+
+    const roles = submenuOf(menu, '&Window').map((item) => item.role);
+
+    expect(roles).not.toContain('selectNextTab');
+  });
+
+  test('offers the Speech submenu in the Edit menu', () => {
+    const menu = generateMenu(menuOptions, window);
+
+    const speech = submenuOf(menu, '&Edit').find(
+      (item) => item.label === 'Speech',
+    );
+
+    expect(
+      (speech?.submenu as MenuItemConstructorOptions[]).map((i) => i.role),
+    ).toEqual(['startSpeaking', 'stopSpeaking']);
+  });
+});
+
+describe('createMenu', () => {
+  const mockIsOSX: jest.SpyInstance = isOSX as jest.Mock;
+  let window: BrowserWindow;
+  let mockSetAboutPanelOptions: jest.SpyInstance;
+
+  const options = {
+    name: 'My App',
+    appVersion: '2.1.0',
+    appCopyright: '(c) Me',
+    nativefierVersion: '1.0.0',
+    targetUrl: 'https://example.com',
+    disableDevTools: false,
+  } as unknown as OutputOptions;
+
+  beforeEach(() => {
+    window = new BrowserWindow();
+    jest.spyOn(window, 'isFullScreenable').mockReturnValue(true);
+    jest.spyOn(Menu, 'setApplicationMenu').mockImplementation();
+    mockSetAboutPanelOptions = jest
+      .spyOn(app, 'setAboutPanelOptions')
+      .mockImplementation();
+    mockIsOSX.mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('fills the About panel from the app options', () => {
+    createMenu(options, window);
+
+    expect(mockSetAboutPanelOptions).toHaveBeenCalledWith(
+      expect.objectContaining({
+        applicationName: 'My App',
+        applicationVersion: '2.1.0',
+        copyright: '(c) Me',
+      }),
+    );
+  });
 });

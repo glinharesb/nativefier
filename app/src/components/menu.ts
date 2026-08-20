@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import path from 'path';
 
 import {
+  app,
   BaseWindow,
   BrowserWindow,
   clipboard,
@@ -11,7 +12,12 @@ import {
   MenuItemConstructorOptions,
 } from 'electron';
 
-import { cleanupPlainText, isOSX, openExternal } from '../helpers/helpers';
+import {
+  cleanupPlainText,
+  isOSX,
+  nativeTabsSupported,
+  openExternal,
+} from '../helpers/helpers';
 import * as log from '../helpers/loggingHelper';
 import {
   clearAppData,
@@ -48,6 +54,17 @@ export function createMenu(
   mainWindow: BrowserWindow,
 ): void {
   log.debug('createMenu', { options });
+
+  // Populates the macOS "About <App>" panel, and its Linux / Windows equivalents,
+  // which otherwise show Electron's own name and version.
+  app.setAboutPanelOptions({
+    applicationName: options.name,
+    applicationVersion: options.appVersion ?? app.getVersion(),
+    version: options.buildVersion ?? '',
+    copyright: options.appCopyright ?? '',
+    credits: `Built with Nativefier v${options.nativefierVersion}`,
+  });
+
   const menuTemplate = generateMenu(options, mainWindow);
 
   injectBookmarks(menuTemplate);
@@ -151,6 +168,27 @@ export function generateMenu(
       },
     ],
   };
+
+  if (isOSX()) {
+    (editMenu.submenu as MenuItemConstructorOptions[]).push(
+      {
+        type: 'separator',
+      },
+      {
+        label: 'Speech',
+        submenu: [
+          {
+            label: 'Start Speaking',
+            role: 'startSpeaking',
+          },
+          {
+            label: 'Stop Speaking',
+            role: 'stopSpeaking',
+          },
+        ],
+      },
+    );
+  }
 
   const viewMenu: MenuItemConstructorOptions = {
     label: '&View',
@@ -288,6 +326,10 @@ export function generateMenu(
         role: 'minimize',
       },
       {
+        label: 'Zoom',
+        role: 'zoom',
+      },
+      {
         label: 'Close',
         accelerator: 'CmdOrCtrl+W',
         role: 'close',
@@ -326,9 +368,16 @@ export function generateMenu(
   let menuTemplate: MenuItemConstructorOptions[];
 
   if (isOSX()) {
-    const electronMenu: MenuItemConstructorOptions = {
-      label: 'E&lectron',
+    const appMenu: MenuItemConstructorOptions = {
+      label: app.name,
       submenu: [
+        {
+          label: `About ${app.name}`,
+          role: 'about',
+        },
+        {
+          type: 'separator',
+        },
         {
           label: 'Services',
           role: 'services',
@@ -361,6 +410,31 @@ export function generateMenu(
         },
       ],
     };
+    if (nativeTabsSupported()) {
+      (windowMenu.submenu as MenuItemConstructorOptions[]).push(
+        {
+          type: 'separator',
+        },
+        {
+          label: 'Show Previous Tab',
+          accelerator: 'Ctrl+Shift+Tab',
+          role: 'selectPreviousTab',
+        },
+        {
+          label: 'Show Next Tab',
+          accelerator: 'Ctrl+Tab',
+          role: 'selectNextTab',
+        },
+        {
+          label: 'Move Tab to New Window',
+          role: 'moveTabToNewWindow',
+        },
+        {
+          label: 'Merge All Windows',
+          role: 'mergeAllWindows',
+        },
+      );
+    }
     (windowMenu.submenu as MenuItemConstructorOptions[]).push(
       {
         type: 'separator',
@@ -370,7 +444,7 @@ export function generateMenu(
         role: 'front',
       },
     );
-    menuTemplate = [electronMenu, editMenu, viewMenu, windowMenu, helpMenu];
+    menuTemplate = [appMenu, editMenu, viewMenu, windowMenu, helpMenu];
   } else {
     menuTemplate = [editMenu, viewMenu, windowMenu, helpMenu];
   }

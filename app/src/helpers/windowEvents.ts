@@ -11,6 +11,8 @@ import * as log from './loggingHelper';
 import {
   createAboutBlankWindow,
   createNewTab,
+  goBack,
+  goForward,
   injectCSS,
   sendParamsOnDidFinishLoad,
   setProxyRules,
@@ -219,6 +221,18 @@ export function setupNativefierWindow(
     });
   });
   window.webContents.on('will-prevent-unload', onWillPreventUnload);
+
+  // macOS-only: three-finger swipe navigates history, like every other
+  // Mac browser. Requires "Swipe between pages" to be set to three fingers
+  // in System Settings. The event never fires on other platforms.
+  window.on('swipe', (event: Event, direction: string) => {
+    log.debug('window.swipe', { direction });
+    if (direction === 'left') {
+      goBack();
+    } else if (direction === 'right') {
+      goForward();
+    }
+  });
 
   sendParamsOnDidFinishLoad(options, window);
 }

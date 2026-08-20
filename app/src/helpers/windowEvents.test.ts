@@ -10,6 +10,7 @@ const {
   onNewWindowHelper,
   onWillNavigate,
   onWillPreventUnload,
+  setupNativefierWindow,
 }: {
   onNewWindowHelper: (
     options: WindowOptions,
@@ -27,11 +28,17 @@ const {
     urlToGo: string,
   ) => Promise<void>;
   onWillPreventUnload: (event: unknown) => void;
+  setupNativefierWindow: (
+    options: WindowOptions,
+    window: BrowserWindow,
+  ) => void;
 } = jest.requireActual('./windowEvents');
 import {
   showNavigationBlockedMessage,
   createAboutBlankWindow,
   createNewTab,
+  goBack,
+  goForward,
 } from './windowHelpers';
 
 describe('onNewWindowHelper', () => {
@@ -349,5 +356,47 @@ describe('onWillPreventUnload', () => {
     expect(mockFromWebContents).toHaveBeenCalledWith(event.sender);
     expect(mockShowDialog).toHaveBeenCalled();
     expect(preventDefault).not.toHaveBeenCalled();
+  });
+});
+
+describe('setupNativefierWindow swipe navigation', () => {
+  const options: WindowOptions = {
+    blockExternalUrls: false,
+    insecure: false,
+    internalUrls: undefined,
+    name: 'Test App',
+    targetUrl: 'https://example.com',
+    zoom: 1.0,
+  } as unknown as WindowOptions;
+
+  let window: BrowserWindow;
+
+  beforeEach(() => {
+    window = new BrowserWindow();
+    (goBack as jest.Mock).mockReset();
+    (goForward as jest.Mock).mockReset();
+    setupNativefierWindow(options, window);
+  });
+
+  test('goes back on a left swipe', () => {
+    window.emit('swipe', {}, 'left');
+
+    expect(goBack).toHaveBeenCalled();
+    expect(goForward).not.toHaveBeenCalled();
+  });
+
+  test('goes forward on a right swipe', () => {
+    window.emit('swipe', {}, 'right');
+
+    expect(goForward).toHaveBeenCalled();
+    expect(goBack).not.toHaveBeenCalled();
+  });
+
+  test('ignores vertical swipes', () => {
+    window.emit('swipe', {}, 'up');
+    window.emit('swipe', {}, 'down');
+
+    expect(goBack).not.toHaveBeenCalled();
+    expect(goForward).not.toHaveBeenCalled();
   });
 });

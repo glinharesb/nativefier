@@ -6,6 +6,7 @@ import {
   BrowserWindowConstructorOptions,
   Event,
   MessageBoxReturnValue,
+  WebContents,
   WebPreferences,
   OnResponseStartedListenerDetails,
 } from 'electron';
@@ -424,4 +425,56 @@ export function setupSessionPermissionHandler(
       callback(originIsAllowed(details.requestingUrl));
     },
   );
+}
+
+export type FindInPageRequest = {
+  text: string;
+  forward?: boolean;
+  findNext?: boolean;
+};
+
+/**
+ * Runs a find-in-page query on behalf of the find bar drawn by the preload.
+ * An empty query means the bar was cleared or closed, so drop the highlight.
+ */
+export function onFindInPage(
+  webContents: WebContents,
+  request: FindInPageRequest,
+): void {
+  log.debug('onFindInPage', request);
+
+  if (!request.text) {
+    webContents.stopFindInPage('clearSelection');
+    return;
+  }
+
+  webContents.findInPage(request.text, {
+    forward: request.forward ?? true,
+    findNext: request.findNext ?? false,
+  });
+}
+
+/** Feeds match counts back to the find bar, so it can show "3/17". */
+export function setupFindInPage(window: BrowserWindow): void {
+  window.webContents.on('found-in-page', (_event, result) => {
+    log.debug('window.webContents.found-in-page', result);
+    window.webContents.send('find-in-page-result', {
+      activeMatchOrdinal: result.activeMatchOrdinal,
+      matches: result.matches,
+    });
+  });
+}
+
+/** Asks the focused window's find bar to open. Wired to the Find… menu item. */
+export function openFindInPage(): void {
+  withFocusedWindow((focusedWindow) => {
+    focusedWindow.webContents.send('find-in-page-open');
+  });
+}
+
+/** Asks the focused window's find bar to step through matches. */
+export function findNextInPage(forward: boolean): void {
+  withFocusedWindow((focusedWindow) => {
+    focusedWindow.webContents.send('find-in-page-next', forward);
+  });
 }

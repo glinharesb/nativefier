@@ -287,3 +287,34 @@ describe('createMenu', () => {
     );
   });
 });
+
+describe('generateMenu find items', () => {
+  let window: BrowserWindow;
+  const mockIsOSX: jest.SpyInstance = isOSX as jest.Mock;
+
+  beforeEach(() => {
+    window = new BrowserWindow();
+    jest.spyOn(window, 'isFullScreenable').mockReturnValue(true);
+    mockIsOSX.mockReturnValue(true);
+  });
+
+  test('offers Find, Find Next and Find Previous under Edit', () => {
+    const menu = generateMenu(
+      { nativefierVersion: '1.0.0', zoom: 1.0, disableDevTools: false },
+      window,
+    );
+
+    const editMenu = menu.find((item) => item.label === '&Edit')
+      ?.submenu as MenuItemConstructorOptions[];
+    const findMenu = editMenu.find((item) => item.label === 'Find')
+      ?.submenu as MenuItemConstructorOptions[];
+
+    expect(
+      findMenu.map((item) => [item.label, item.accelerator]),
+    ).toEqual([
+      ['Find…', 'CmdOrCtrl+F'],
+      ['Find Next', 'CmdOrCtrl+G'],
+      ['Find Previous', 'Shift+CmdOrCtrl+G'],
+    ]);
+  });
+});

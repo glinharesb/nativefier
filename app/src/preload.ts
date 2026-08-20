@@ -350,3 +350,199 @@ function isWayland(): boolean {
 function isLinux(): boolean {
   return os.platform() === 'linux';
 }
+
+// --- Find in page ---------------------------------------------------------
+// Drawn here rather than in a separate window so it scrolls with nothing and
+// costs no extra BrowserWindow. It lives in a shadow root so the wrapped
+// site's CSS can neither style it nor be styled by it.
+
+const FIND_BAR_STYLE = `
+  :host {
+    all: initial;
+  }
+  .bar {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    background: #f6f6f6;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    font: 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #1d1d1f;
+  }
+  input {
+    width: 200px;
+    padding: 4px 6px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    background: #fff;
+    color: inherit;
+    font: inherit;
+    outline: none;
+  }
+  input:focus {
+    border-color: #0a84ff;
+    box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.25);
+  }
+  .count {
+    min-width: 52px;
+    text-align: center;
+    opacity: 0.6;
+    font-variant-numeric: tabular-nums;
+  }
+  button {
+    min-width: 24px;
+    padding: 3px 6px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    background: #fff;
+    color: inherit;
+    font: inherit;
+    line-height: 1;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #ececec;
+  }
+  @media (prefers-color-scheme: dark) {
+    .bar {
+      border-color: rgba(255, 255, 255, 0.15);
+      background: #2c2c2e;
+      color: #f5f5f7;
+    }
+    input,
+    button {
+      border-color: rgba(255, 255, 255, 0.2);
+      background: #1c1c1e;
+      color: inherit;
+    }
+    button:hover {
+      background: #3a3a3c;
+    }
+  }
+`;
+
+type FindBar = {
+  show: () => void;
+  hide: () => void;
+  step: (forward: boolean) => void;
+  setResult: (activeMatchOrdinal: number, matches: number) => void;
+};
+
+let findBar: FindBar | undefined;
+
+function createFindBar(): FindBar {
+  const host = document.createElement('div');
+  host.style.setProperty('display', 'none');
+  const root = host.attachShadow({ mode: 'closed' });
+
+  const style = document.createElement('style');
+  style.textContent = FIND_BAR_STYLE;
+
+  const bar = document.createElement('div');
+  bar.className = 'bar';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = 'Find';
+  input.setAttribute('aria-label', 'Find in page');
+
+  const count = document.createElement('span');
+  count.className = 'count';
+
+  const previous = document.createElement('button');
+  previous.textContent = '‹';
+  previous.title = 'Previous match';
+
+  const next = document.createElement('button');
+  next.textContent = '›';
+  next.title = 'Next match';
+
+  const close = document.createElement('button');
+  close.textContent = '✕';
+  close.title = 'Close';
+
+  bar.append(input, count, previous, next, close);
+  root.append(style, bar);
+  document.documentElement.appendChild(host);
+
+  const search = (forward: boolean, findNext: boolean): void => {
+    ipcRenderer.send('find-in-page', {
+      text: input.value,
+      forward,
+      findNext,
+    });
+    if (!input.value) {
+      count.textContent = '';
+    }
+  };
+
+  const hide = (): void => {
+    host.style.setProperty('display', 'none');
+    count.textContent = '';
+    ipcRenderer.send('stop-find-in-page');
+  };
+
+  const show = (): void => {
+    host.style.setProperty('display', 'block');
+    input.focus();
+    input.select();
+  };
+
+  const step = (forward: boolean): void => {
+    if (input.value) {
+      search(forward, true);
+    }
+  };
+
+  input.addEventListener('input', () => search(true, false));
+  input.addEventListener('keydown', (event: KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      step(!event.shiftKey);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      hide();
+    }
+  });
+  previous.addEventListener('click', () => step(false));
+  next.addEventListener('click', () => step(true));
+  close.addEventListener('click', hide);
+
+  return {
+    show,
+    hide,
+    step,
+    setResult: (activeMatchOrdinal: number, matches: number): void => {
+      count.textContent = matches > 0 ? `${activeMatchOrdinal}/${matches}` : '';
+    },
+  };
+}
+
+function getFindBar(): FindBar {
+  if (!findBar) {
+    findBar = createFindBar();
+  }
+  return findBar;
+}
+
+ipcRenderer.on('find-in-page-open', () => {
+  getFindBar().show();
+});
+
+ipcRenderer.on('find-in-page-next', (event, forward: boolean) => {
+  getFindBar().step(forward);
+});
+
+ipcRenderer.on(
+  'find-in-page-result',
+  (event, result: { activeMatchOrdinal: number; matches: number }) => {
+    getFindBar().setResult(result.activeMatchOrdinal, result.matches);
+  },
+);

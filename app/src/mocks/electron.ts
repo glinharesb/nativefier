@@ -151,6 +151,18 @@ class MockWebContents extends EventEmitter {
   insertCSS(css: string, options?: unknown): Promise<string> {
     throw new Error('Not implemented');
   }
+
+  findInPage(text: string, options?: unknown): number {
+    return 1;
+  }
+
+  stopFindInPage(action: string): void {
+    return;
+  }
+
+  send(channel: string, ...args: unknown[]): void {
+    return;
+  }
 }
 
 class MockWebRequest {

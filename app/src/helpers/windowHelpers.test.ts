@@ -17,7 +17,9 @@ import {
   getDefaultWindowOptions,
   hideWindow,
   injectCSS,
+  onFindInPage,
   setIsQuitting,
+  setupFindInPage,
   setupSessionPermissionHandler,
 } from './windowHelpers';
 
@@ -452,5 +454,69 @@ describe('setupSessionPermissionHandler', () => {
     });
 
     expect(callback).toHaveBeenCalledWith(false);
+  });
+});
+
+describe('onFindInPage', () => {
+  let window: BrowserWindow;
+  let mockFindInPage: jest.SpyInstance;
+  let mockStopFindInPage: jest.SpyInstance;
+
+  beforeEach(() => {
+    window = new BrowserWindow();
+    mockFindInPage = jest.spyOn(window.webContents, 'findInPage');
+    mockStopFindInPage = jest.spyOn(window.webContents, 'stopFindInPage');
+  });
+
+  afterEach(() => {
+    mockFindInPage.mockRestore();
+    mockStopFindInPage.mockRestore();
+  });
+
+  test('searches forward from the top on a fresh query', () => {
+    onFindInPage(window.webContents, { text: 'needle' });
+
+    expect(mockFindInPage).toHaveBeenCalledWith('needle', {
+      forward: true,
+      findNext: false,
+    });
+  });
+
+  test('steps to the previous match when asked to go backwards', () => {
+    onFindInPage(window.webContents, {
+      text: 'needle',
+      forward: false,
+      findNext: true,
+    });
+
+    expect(mockFindInPage).toHaveBeenCalledWith('needle', {
+      forward: false,
+      findNext: true,
+    });
+  });
+
+  test('clears the selection when the query is emptied', () => {
+    onFindInPage(window.webContents, { text: '' });
+
+    expect(mockStopFindInPage).toHaveBeenCalledWith('clearSelection');
+    expect(mockFindInPage).not.toHaveBeenCalled();
+  });
+});
+
+describe('setupFindInPage', () => {
+  test('reports match counts back to the page', () => {
+    const window = new BrowserWindow();
+    const mockSend = jest.spyOn(window.webContents, 'send');
+
+    setupFindInPage(window);
+    window.webContents.emit('found-in-page', {}, {
+      activeMatchOrdinal: 3,
+      matches: 17,
+    });
+
+    expect(mockSend).toHaveBeenCalledWith('find-in-page-result', {
+      activeMatchOrdinal: 3,
+      matches: 17,
+    });
   });
 });

@@ -21,10 +21,12 @@ import {
 import * as log from '../helpers/loggingHelper';
 import {
   clearAppData,
+  findNextInPage,
   getCurrentURL,
   goBack,
   goForward,
   goToURL,
+  openFindInPage,
   zoomIn,
   zoomOut,
   zoomReset,
@@ -144,6 +146,32 @@ export function generateMenu(
         label: 'Select All',
         accelerator: 'CmdOrCtrl+A',
         role: 'selectAll',
+      },
+      {
+        type: 'separator',
+      },
+      {
+        label: 'Find',
+        submenu: [
+          {
+            label: 'Find…',
+            accelerator: 'CmdOrCtrl+F',
+            click: openFindInPage,
+          },
+          {
+            label: 'Find Next',
+            accelerator: 'CmdOrCtrl+G',
+            click: (): void => findNextInPage(true),
+          },
+          {
+            label: 'Find Previous',
+            accelerator: 'Shift+CmdOrCtrl+G',
+            click: (): void => findNextInPage(false),
+          },
+        ],
+      },
+      {
+        type: 'separator',
       },
       {
         label: 'Clear App Data',

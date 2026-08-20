@@ -447,9 +447,7 @@ describe('onOpenUrl', () => {
 
     await onOpenUrl(options, window, 'https://elsewhere.example/page');
 
-    expect(openExternal).toHaveBeenCalledWith(
-      'https://elsewhere.example/page',
-    );
+    expect(openExternal).toHaveBeenCalledWith('https://elsewhere.example/page');
     expect(mockLoadURL).not.toHaveBeenCalled();
   });
 

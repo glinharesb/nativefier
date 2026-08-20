@@ -350,4 +350,3 @@ function isWayland(): boolean {
 function isLinux(): boolean {
   return os.platform() === 'linux';
 }
-

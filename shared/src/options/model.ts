@@ -3,10 +3,7 @@ import { randomUUID } from 'crypto';
 import * as electronPackager from 'electron-packager';
 
 export type TitleBarValue =
-  | 'default'
-  | 'hidden'
-  | 'hiddenInset'
-  | 'customButtonsOnHover';
+  'default' | 'hidden' | 'hiddenInset' | 'customButtonsOnHover';
 export type TrayValue = 'true' | 'false' | 'start-in-tray';
 
 export interface ElectronPackagerOptions extends electronPackager.Options {
@@ -226,7 +223,7 @@ export function outputOptionsToWindowOptions(
     autoHideMenuBar: !options.showMenuBar,
     insecure: options.insecure ?? false,
     tabbingIdentifier: generateTabbingIdentifierIfMissing
-      ? options.tabbingIdentifier ?? randomUUID()
+      ? (options.tabbingIdentifier ?? randomUUID())
       : options.tabbingIdentifier,
     zoom: options.zoom ?? 1.0,
   };

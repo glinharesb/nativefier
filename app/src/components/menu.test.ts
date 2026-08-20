@@ -311,9 +311,7 @@ describe('generateMenu find items', () => {
     const findMenu = editMenu.find((item) => item.label === 'Find')
       ?.submenu as MenuItemConstructorOptions[];
 
-    expect(
-      findMenu.map((item) => [item.label, item.accelerator]),
-    ).toEqual([
+    expect(findMenu.map((item) => [item.label, item.accelerator])).toEqual([
       ['Find…', 'CmdOrCtrl+F'],
       ['Find Next', 'CmdOrCtrl+G'],
       ['Find Previous', 'Shift+CmdOrCtrl+G'],

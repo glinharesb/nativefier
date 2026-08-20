@@ -1,7 +1,7 @@
 jest.mock('../helpers/helpers');
 jest.mock('../helpers/windowHelpers');
 
-import { BrowserWindow, nativeImage, Tray } from 'electron';
+import { BrowserWindow, nativeImage } from 'electron';
 
 import { getAppIcon, isOSX } from '../helpers/helpers';
 import { createTrayIcon } from './trayIcon';
@@ -27,11 +27,9 @@ describe('createTrayIcon', () => {
       nativeImage.createFromPath('/path/to/icon.png'),
       'resize',
     );
-    jest
-      .spyOn(nativeImage, 'createFromPath')
-      .mockReturnValue({
-        resize: mockResize as unknown as () => unknown,
-      } as unknown as ReturnType<typeof nativeImage.createFromPath>);
+    jest.spyOn(nativeImage, 'createFromPath').mockReturnValue({
+      resize: mockResize as unknown as () => unknown,
+    } as unknown as ReturnType<typeof nativeImage.createFromPath>);
   });
 
   afterEach(() => {

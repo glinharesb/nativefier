@@ -25,9 +25,9 @@ import { parseJson } from './utils/parseUtils';
 // to have a *non*-promise type. Maybe that's wrong. If it is, this type should
 // be dropped, and extra async-ness should be added where needed.
 type YargsArgvSync<T> = {
-  [key in keyof yargs.Arguments<T> as
-    | key
-    | yargs.CamelCaseKey<key>]: yargs.Arguments<T>[key];
+  [
+    key in keyof yargs.Arguments<T> as key | yargs.CamelCaseKey<key>
+  ]: yargs.Arguments<T>[key];
 };
 
 export function initArgs(argv: string[]): yargs.Argv<RawOptions> {
@@ -594,7 +594,7 @@ export function parseArgs(args: yargs.Argv<RawOptions>): RawOptions {
     'file-download-options',
   ]) {
     if (parsed[arg] && typeof parsed[arg] === 'string') {
-      parsed[arg] = parseJson(parsed[arg] as string);
+      parsed[arg] = parseJson(parsed[arg]);
       // sets fileDownloadOptions and browserWindowOptions
       // as parsed object as they were still strings in `nativefier.json`
       // because only their snake-cased variants were being parsed above

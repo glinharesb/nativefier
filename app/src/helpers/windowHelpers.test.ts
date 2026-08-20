@@ -420,17 +420,17 @@ describe('setupSessionPermissionHandler', () => {
   test('grants a permission checked by the wrapped site', () => {
     mockLinkIsInternal.mockReturnValue(true);
 
-    expect(
-      checkHandler(null, 'notifications', 'https://example.com', {}),
-    ).toBe(true);
+    expect(checkHandler(null, 'notifications', 'https://example.com', {})).toBe(
+      true,
+    );
   });
 
   test('denies a permission checked by an unrelated site', () => {
     mockLinkIsInternal.mockReturnValue(false);
 
-    expect(
-      checkHandler(null, 'media', 'https://tracker.example.net', {}),
-    ).toBe(false);
+    expect(checkHandler(null, 'media', 'https://tracker.example.net', {})).toBe(
+      false,
+    );
   });
 
   test('grants a permission requested by the wrapped site', () => {
@@ -504,8 +504,6 @@ describe('onFindInPage', () => {
     expect(mockFindInPage).not.toHaveBeenCalled();
   });
 });
-
-
 
 describe('setupSessionPermissionHandler with no usable origin', () => {
   const mockLinkIsInternal = linkIsInternal as jest.Mock;

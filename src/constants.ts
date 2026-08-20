@@ -6,10 +6,10 @@ export const DEFAULT_APP_NAME = 'APP';
 //   - upgrade app / package.json / "devDependencies" / "electron"
 //   - upgrade       package.json / "devDependencies" / "electron"
 // Doing a *major* upgrade? Read https://github.com/nativefier/nativefier/blob/master/HACKING.md#deps-major-upgrading-electron
-export const DEFAULT_ELECTRON_VERSION = '38.8.6';
+export const DEFAULT_ELECTRON_VERSION = '41.7.1';
 // https://atom.io/download/atom-shell/index.json
 // https://www.electronjs.org/releases/stable
-export const DEFAULT_CHROME_VERSION = '140.0.7339.249';
+export const DEFAULT_CHROME_VERSION = '146.0.7680.216';
 
 // Update each of these periodically
 // https://product-details.mozilla.org/1.0/firefox_versions.json

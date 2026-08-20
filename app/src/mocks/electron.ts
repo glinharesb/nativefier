@@ -190,6 +190,50 @@ class MockWebRequest {
 
 class InternalEmitter extends EventEmitter {}
 
+class MockNativeImage {
+  resize(options: { width?: number; height?: number }): MockNativeImage {
+    return this;
+  }
+}
+
+const mockNativeImage = {
+  createEmpty(): MockNativeImage {
+    return new MockNativeImage();
+  },
+  createFromPath(path: string): MockNativeImage {
+    return new MockNativeImage();
+  },
+};
+
+class MockTray extends EventEmitter {
+  constructor(image?: MockNativeImage) {
+    super();
+  }
+
+  destroy(): void {
+    return;
+  }
+
+  getBounds(): { x: number; y: number; width: number; height: number } {
+    // Matches the real macOS behaviour: 0 until an image has been set.
+    return { x: 0, y: 0, width: 16, height: 0 };
+  }
+
+  setContextMenu(menu: MockMenu | null): void {
+    return;
+  }
+
+  setImage(image: MockNativeImage): void {
+    return;
+  }
+
+  setToolTip(toolTip: string): void {
+    return;
+  }
+}
+
+const mockIpcMain = new EventEmitter();
+
 class MockMenu {
   static buildFromTemplate(template: unknown[]): MockMenu {
     return new MockMenu();
@@ -208,6 +252,9 @@ const mockApp = {
   setAboutPanelOptions(options: unknown): void {
     return;
   },
+  quit(): void {
+    return;
+  },
 };
 
 const mockShell = {
@@ -219,7 +266,10 @@ const mockShell = {
 export {
   mockApp as app,
   MockDialog as dialog,
+  mockIpcMain as ipcMain,
   MockMenu as Menu,
+  mockNativeImage as nativeImage,
+  MockTray as Tray,
   MockBrowserWindow as BrowserWindow,
   MockSession as Session,
   MockWebContents as WebContents,

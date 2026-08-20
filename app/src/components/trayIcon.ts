@@ -5,6 +5,11 @@ import * as log from '../helpers/loggingHelper';
 import { setIsQuitting } from '../helpers/windowHelpers';
 import { OutputOptions } from '../../../shared/src/options/model';
 
+// The macOS menu bar wants a 16pt icon. This used to be derived from
+// Tray.getBounds().height, but that stays 0 until an image has been set, so
+// resize() was being asked for a height of -2.
+const MACOS_MENU_BAR_ICON_HEIGHT = 16;
+
 export function createTrayIcon(
   nativefierOptions: OutputOptions,
   mainWindow: BrowserWindow,
@@ -20,10 +25,7 @@ export function createTrayIcon(
     const appIcon = new Tray(nativeImage.createEmpty());
 
     if (isOSX()) {
-      //sets the icon to the height of the tray.
-      appIcon.setImage(
-        nimage.resize({ height: appIcon.getBounds().height - 2 }),
-      );
+      appIcon.setImage(nimage.resize({ height: MACOS_MENU_BAR_ICON_HEIGHT }));
     } else {
       appIcon.setImage(nimage);
     }

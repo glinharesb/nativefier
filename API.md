@@ -67,7 +67,6 @@
     - [[enable-es3-apis]](#enable-es3-apis)
     - [[ignore-gpu-blacklist]](#ignore-gpu-blacklist)
   - [(In)Security Options](#insecurity-options)
-    - [[disable-old-build-warning-yesiknowitisinsecure]](#disable-old-build-warning-yesiknowitisinsecure)
     - [[ignore-certificate]](#ignore-certificate)
     - [[insecure]](#insecure)
   - [Platform Specific Options](#platform-specific-options)
@@ -85,6 +84,7 @@
     - [[quiet]](#quiet)
   - [Flash Options (Deprecated)](#flash-options-deprecated)
     - [[flash] and [flash-path] (DEPRECATED)](#flash-and-flash-path-deprecated)
+- [Built-in Shortcuts](#built-in-shortcuts)
 - [Programmatic API](#programmatic-api)
 - [Accessing The Electron Session](#accessing-the-electron-session)
   - [Important Note On funcArgs](#important-note-on-funcargs)
@@ -92,6 +92,29 @@
   - [Errors](#errors)
   - [Complex Return Values](#complex-return-values)
   - [Example](#example)
+
+## Built-in Shortcuts
+
+Every app ships with these, no configuration needed. `Cmd` is `Ctrl` off macOS.
+
+| Shortcut | Action |
+| --- | --- |
+| `Cmd+F` | Open the find bar |
+| `Cmd+G` / `Shift+Cmd+G` | Jump to the next / previous match |
+| `Esc` | Close the find bar and clear the highlight |
+| `Cmd+L` | Copy the current URL |
+| `Cmd+Shift+C` | Copy the selection as plain text |
+| `Cmd+[` / `Cmd+]` | Go back / forward (also `Cmd+←` / `Cmd+→` on macOS) |
+| `Cmd+0` / `Cmd+=` / `Cmd+-` | Reset / increase / decrease zoom |
+| `Ctrl+Cmd+F` (macOS) or `F11` | Toggle full screen |
+
+On macOS, a three-finger trackpad swipe also navigates back and forward. This
+requires "Swipe between pages" to be set to "Swipe with three fingers" in
+System Settings > Trackpad > More Gestures.
+
+macOS builds use native tabs, so the Window menu also offers Show Next Tab
+(`Ctrl+Tab`), Show Previous Tab (`Ctrl+Shift+Tab`), Move Tab to New Window and
+Merge All Windows.
 
 ## Packaging Squirrel-based installers
 
@@ -358,6 +381,16 @@ Example:
 
 ```bash
 nativefier <your-website> --browserwindow-options '{ "webPreferences": { "defaultFontFamily": { "standard": "Comic Sans MS", "serif": "Comic Sans MS" } } }'
+```
+
+This is also how you reach the macOS-only appearance options Nativefier has no
+dedicated flag for, such as window vibrancy and the position of the traffic
+light buttons. The latter pairs well with `--title-bar-style hiddenInset`, to
+keep the buttons from covering the site's own UI:
+
+```bash
+nativefier <your-website> --title-bar-style hiddenInset \
+  --browserwindow-options '{ "vibrancy": "under-window", "trafficLightPosition": { "x": 16, "y": 16 } }'
 ```
 
 #### [disable-context-menu]
@@ -864,14 +897,6 @@ _[New in 7.4.1]_ Passes the enable-es3-apis flag to the Chrome engine, to force 
 _[New in 7.4.1]_ Passes the ignore-gpu-blacklist flag to the Chrome engine, to allow for WebGl apps to work on non supported graphics cards.
 
 ### (In)Security Options
-
-#### [disable-old-build-warning-yesiknowitisinsecure]
-
-Disables the warning shown when opening a Nativefier app made a long time ago, using an old and probably insecure Electron. Nativefier uses the Chrome browser (through Electron), and remaining on an old version is A. performance sub-optimal and B. dangerous.
-
-However, there are legitimate use cases to disable such a warning. For example, if you are using Nativefier to ship a kiosk app exposing an internal site (over which you have control). Under those circumstances, it is reasonable to disable this warning that you definitely don't want end-users to see.
-
-More description about the options for `nativefier` can be found at the above [section](#command-line).
 
 #### [ignore-certificate]
 

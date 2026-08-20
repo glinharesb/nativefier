@@ -108,6 +108,32 @@ class MockSession extends EventEmitter {
   clearStorageData(): Promise<void> {
     return Promise.resolve();
   }
+
+  setPermissionCheckHandler(
+    handler:
+      | ((
+          webContents: MockWebContents | null,
+          permission: string,
+          requestingOrigin: string,
+          details: unknown,
+        ) => boolean)
+      | null,
+  ): void {
+    return;
+  }
+
+  setPermissionRequestHandler(
+    handler:
+      | ((
+          webContents: MockWebContents,
+          permission: string,
+          callback: (granted: boolean) => void,
+          details: unknown,
+        ) => void)
+      | null,
+  ): void {
+    return;
+  }
 }
 
 class MockWebContents extends EventEmitter {

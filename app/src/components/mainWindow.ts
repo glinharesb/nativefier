@@ -27,6 +27,7 @@ import {
   createNewTab,
   getDefaultWindowOptions,
   hideWindow,
+  setupSessionPermissionHandler,
 } from '../helpers/windowHelpers';
 import {
   OutputOptions,
@@ -151,7 +152,8 @@ export async function createMainWindow(
   });
 
   setupSessionInteraction(mainWindow);
-  setupSessionPermissionHandler(mainWindow);
+  setupSessionPermissionHandler(windowOptions, mainWindow);
+  setupDesktopCapturer();
 
   if (options.clearCache) {
     await clearCache(mainWindow);
@@ -227,15 +229,7 @@ function setupCounter(
   });
 }
 
-function setupSessionPermissionHandler(window: BrowserWindow): void {
-  window.webContents.session.setPermissionCheckHandler(() => {
-    return true;
-  });
-  window.webContents.session.setPermissionRequestHandler(
-    (_webContents, _permission, callback) => {
-      callback(true);
-    },
-  );
+function setupDesktopCapturer(): void {
   ipcMain.handle('desktop-capturer-get-sources', () => {
     return desktopCapturer.getSources({
       types: ['screen', 'window'],

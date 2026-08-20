@@ -4,7 +4,12 @@ import { error } from 'loglevel';
 import { WindowOptions } from '../../../shared/src/options/model';
 
 jest.mock('./helpers');
-import { getCSSToInject, isOSX, nativeTabsSupported } from './helpers';
+import {
+  getCSSToInject,
+  isOSX,
+  linkIsInternal,
+  nativeTabsSupported,
+} from './helpers';
 jest.mock('./windowEvents');
 import {
   clearAppData,
@@ -13,6 +18,7 @@ import {
   hideWindow,
   injectCSS,
   setIsQuitting,
+  setupSessionPermissionHandler,
 } from './windowHelpers';
 
 describe('clearAppData', () => {
@@ -369,5 +375,82 @@ describe('getDefaultWindowOptions', () => {
     const options = getDefaultWindowOptions({ ...baseOptions });
 
     expect(options.tabbingIdentifier).toBeUndefined();
+  });
+});
+
+describe('setupSessionPermissionHandler', () => {
+  const mockLinkIsInternal = linkIsInternal as jest.Mock;
+  const options = {
+    internalUrls: undefined,
+    strictInternalUrls: false,
+    targetUrl: 'https://example.com',
+  } as unknown as WindowOptions;
+
+  let window: BrowserWindow;
+  let checkHandler: (
+    webContents: unknown,
+    permission: string,
+    requestingOrigin: string,
+    details: unknown,
+  ) => boolean;
+  let requestHandler: (
+    webContents: unknown,
+    permission: string,
+    callback: (granted: boolean) => void,
+    details: unknown,
+  ) => void;
+
+  beforeEach(() => {
+    window = new BrowserWindow();
+    mockLinkIsInternal.mockReset();
+    jest
+      .spyOn(window.webContents.session, 'setPermissionCheckHandler')
+      .mockImplementation((handler) => {
+        checkHandler = handler as typeof checkHandler;
+      });
+    jest
+      .spyOn(window.webContents.session, 'setPermissionRequestHandler')
+      .mockImplementation((handler) => {
+        requestHandler = handler as typeof requestHandler;
+      });
+    setupSessionPermissionHandler(options, window);
+  });
+
+  test('grants a permission checked by the wrapped site', () => {
+    mockLinkIsInternal.mockReturnValue(true);
+
+    expect(
+      checkHandler(null, 'notifications', 'https://example.com', {}),
+    ).toBe(true);
+  });
+
+  test('denies a permission checked by an unrelated site', () => {
+    mockLinkIsInternal.mockReturnValue(false);
+
+    expect(
+      checkHandler(null, 'media', 'https://tracker.example.net', {}),
+    ).toBe(false);
+  });
+
+  test('grants a permission requested by the wrapped site', () => {
+    mockLinkIsInternal.mockReturnValue(true);
+    const callback = jest.fn();
+
+    requestHandler(null, 'notifications', callback, {
+      requestingUrl: 'https://example.com/inbox',
+    });
+
+    expect(callback).toHaveBeenCalledWith(true);
+  });
+
+  test('denies a permission requested by an unrelated site', () => {
+    mockLinkIsInternal.mockReturnValue(false);
+    const callback = jest.fn();
+
+    requestHandler(null, 'media', callback, {
+      requestingUrl: 'https://tracker.example.net/spy',
+    });
+
+    expect(callback).toHaveBeenCalledWith(false);
   });
 });

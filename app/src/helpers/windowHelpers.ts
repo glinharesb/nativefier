@@ -10,7 +10,12 @@ import {
   OnResponseStartedListenerDetails,
 } from 'electron';
 
-import { getCSSToInject, isOSX, nativeTabsSupported } from './helpers';
+import {
+  getCSSToInject,
+  isOSX,
+  linkIsInternal,
+  nativeTabsSupported,
+} from './helpers';
 import * as log from './loggingHelper';
 import { TrayValue, WindowOptions } from '../../../shared/src/options/model';
 
@@ -383,4 +388,40 @@ export function zoomReset(options: { zoom?: number }): void {
 export function zoomIn(): void {
   log.debug('zoomIn');
   adjustWindowZoom(ZOOM_INTERVAL);
+}
+
+/**
+ * Grants web permissions (notifications, camera, geolocation...) to the site
+ * the app wraps, and denies them to anything else. The user opted into this
+ * one site when they built the app; they did not opt into every third-party
+ * frame it happens to embed.
+ *
+ * `strictInternalUrls` is deliberately not honoured here: it compares whole
+ * URLs, while permissions are checked per origin, so it would deny everything.
+ */
+export function setupSessionPermissionHandler(
+  options: Pick<WindowOptions, 'internalUrls' | 'targetUrl'>,
+  window: BrowserWindow,
+): void {
+  const originIsAllowed = (url: string): boolean => {
+    const allowed = linkIsInternal(
+      options.targetUrl,
+      url,
+      options.internalUrls,
+      false,
+    );
+    log.debug('session.permission', { url, allowed });
+    return allowed;
+  };
+
+  window.webContents.session.setPermissionCheckHandler(
+    (_webContents, _permission, requestingOrigin) =>
+      originIsAllowed(requestingOrigin),
+  );
+
+  window.webContents.session.setPermissionRequestHandler(
+    (_webContents, _permission, callback, details) => {
+      callback(originIsAllowed(details.requestingUrl));
+    },
+  );
 }

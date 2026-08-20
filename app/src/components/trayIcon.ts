@@ -2,6 +2,7 @@ import { app, Tray, Menu, ipcMain, nativeImage, BrowserWindow } from 'electron';
 
 import { getAppIcon, getCounterValue, isOSX } from '../helpers/helpers';
 import * as log from '../helpers/loggingHelper';
+import { setIsQuitting } from '../helpers/windowHelpers';
 import { OutputOptions } from '../../../shared/src/options/model';
 
 export function createTrayIcon(
@@ -43,7 +44,10 @@ export function createTrayIcon(
       },
       {
         label: 'Quit',
-        click: (): void => app.exit(0),
+        click: (): void => {
+          setIsQuitting(true);
+          app.quit();
+        },
       },
     ]);
 

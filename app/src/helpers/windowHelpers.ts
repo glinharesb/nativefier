@@ -17,6 +17,19 @@ import { randomUUID } from 'crypto';
 
 const ZOOM_INTERVAL = 0.1;
 
+// Set once the app has started quitting, so that window 'close' handlers stop
+// hiding windows and let them actually close. Without this, the macOS-only
+// preventDefault() below would keep the app alive forever on quit.
+let quitting = false;
+
+export function setIsQuitting(value: boolean): void {
+  quitting = value;
+}
+
+export function isQuitting(): boolean {
+  return quitting;
+}
+
 export function adjustWindowZoom(adjustment: number): void {
   withFocusedWindow((focusedWindow: BrowserWindow) => {
     focusedWindow.webContents.zoomFactor =
@@ -214,6 +227,10 @@ export function hideWindow(
   fastQuit: boolean,
   tray: TrayValue,
 ): void {
+  if (quitting) {
+    return;
+  }
+
   if (isOSX() && !fastQuit) {
     // this is called when exiting from clicking the cross button on the window
     event.preventDefault();

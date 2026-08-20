@@ -21,6 +21,7 @@ import {
   APP_ARGS_FILE_PATH,
 } from './components/mainWindow';
 import { createTrayIcon } from './components/trayIcon';
+import { setIsQuitting } from './helpers/windowHelpers';
 import {
   isLinux,
   isOSX,
@@ -234,15 +235,12 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   log.debug('app.before-quit');
-  // not fired when the close button on the window is clicked
-  if (isOSX()) {
-    // need to force a quit as a workaround here to simulate the osx app hiding behaviour
-    // Somehow sokution at https://github.com/atom/electron/issues/444#issuecomment-76492576 does not work,
-    // e.prevent default appears to persist
-
-    // might cause issues in the future as before-quit and will-quit events are not called
-    app.exit(0);
-  }
+  // Not fired when the close button on the window is clicked.
+  // Tell window 'close' handlers to stop hiding-instead-of-closing, else the
+  // macOS hiding behaviour would keep the app alive forever. Quitting from here
+  // on is a normal app.quit(), so 'will-quit' still runs and the session gets
+  // a chance to flush cookies and storage to disk.
+  setIsQuitting(true);
 });
 
 app.on('will-quit', (event) => {

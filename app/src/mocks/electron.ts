@@ -36,6 +36,14 @@ class MockBrowserWindow extends EventEmitter {
     return;
   }
 
+  hide(): void {
+    return;
+  }
+
+  isVisible(): boolean {
+    return true;
+  }
+
   static fromWebContents(webContents: MockWebContents): MockBrowserWindow {
     return new MockBrowserWindow();
   }

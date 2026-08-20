@@ -4,9 +4,15 @@ import { error } from 'loglevel';
 import { WindowOptions } from '../../../shared/src/options/model';
 
 jest.mock('./helpers');
-import { getCSSToInject } from './helpers';
+import { getCSSToInject, isOSX } from './helpers';
 jest.mock('./windowEvents');
-import { clearAppData, createNewTab, injectCSS } from './windowHelpers';
+import {
+  clearAppData,
+  createNewTab,
+  hideWindow,
+  injectCSS,
+  setIsQuitting,
+} from './windowHelpers';
 
 describe('clearAppData', () => {
   let window: BrowserWindow;
@@ -289,4 +295,44 @@ describe('injectCSS', () => {
       expect(mockWebContentsInsertCSS).toHaveBeenCalledTimes(1);
     },
   );
+});
+
+describe('hideWindow', () => {
+  const mockIsOSX = isOSX as jest.Mock;
+  let window: BrowserWindow;
+  let mockHide: jest.SpyInstance;
+  let preventDefault: jest.Mock;
+  let event: Event;
+
+  beforeEach(() => {
+    window = new BrowserWindow();
+    mockHide = jest.spyOn(window, 'hide').mockImplementation();
+    preventDefault = jest.fn();
+    event = { preventDefault } as unknown as Event;
+    setIsQuitting(false);
+  });
+
+  afterEach(() => {
+    mockHide.mockRestore();
+    setIsQuitting(false);
+  });
+
+  test('hides the window instead of closing it on macOS', () => {
+    mockIsOSX.mockReturnValue(true);
+
+    hideWindow(window, event, false, 'false');
+
+    expect(preventDefault).toHaveBeenCalled();
+    expect(mockHide).toHaveBeenCalled();
+  });
+
+  test('lets the window close once the app is quitting', () => {
+    mockIsOSX.mockReturnValue(true);
+    setIsQuitting(true);
+
+    hideWindow(window, event, false, 'false');
+
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(mockHide).not.toHaveBeenCalled();
+  });
 });

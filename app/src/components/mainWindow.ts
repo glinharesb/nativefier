@@ -11,6 +11,7 @@ import {
 import windowStateKeeper from 'electron-window-state';
 
 import { initContextMenu } from './contextMenu';
+import { createFindBar } from './findBar';
 import { createMenu } from './menu';
 import {
   getAppIcon,
@@ -27,10 +28,8 @@ import {
   createNewTab,
   getDefaultWindowOptions,
   hideWindow,
-  onFindInPage,
   setupSessionPermissionHandler,
 } from '../helpers/windowHelpers';
-import type { FindInPageRequest } from '../helpers/windowHelpers';
 import {
   OutputOptions,
   outputOptionsToWindowOptions,
@@ -156,7 +155,7 @@ export async function createMainWindow(
   setupSessionInteraction(mainWindow);
   setupSessionPermissionHandler(windowOptions, mainWindow);
   setupDesktopCapturer();
-  setupFindInPageHandlers();
+  createFindBar(mainWindow);
 
   if (options.clearCache) {
     await clearCache(mainWindow);
@@ -229,15 +228,6 @@ function setupCounter(
     } else {
       setDockBadge('');
     }
-  });
-}
-
-function setupFindInPageHandlers(): void {
-  ipcMain.on('find-in-page', (event, request: FindInPageRequest) => {
-    onFindInPage(event.sender, request);
-  });
-  ipcMain.on('stop-find-in-page', (event) => {
-    event.sender.stopFindInPage('clearSelection');
   });
 }
 

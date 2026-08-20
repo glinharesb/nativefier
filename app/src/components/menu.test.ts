@@ -374,3 +374,25 @@ describe('createMenu dock menu', () => {
     expect(mockSetMenu).not.toHaveBeenCalled();
   });
 });
+
+describe('generateMenu About label', () => {
+  test('names the app as the user named it, not as the bundle id', () => {
+    const window = new BrowserWindow();
+    jest.spyOn(window, 'isFullScreenable').mockReturnValue(true);
+    (isOSX as jest.Mock).mockReturnValue(true);
+
+    const menu = generateMenu(
+      {
+        name: 'My Great App',
+        nativefierVersion: '1.0.0',
+        zoom: 1.0,
+        disableDevTools: false,
+      },
+      window,
+    );
+
+    const appMenu = menu[0].submenu as MenuItemConstructorOptions[];
+
+    expect(appMenu[0].label).toBe('About My Great App');
+  });
+});

@@ -16,7 +16,6 @@ import {
   injectCSS,
   sendParamsOnDidFinishLoad,
   setProxyRules,
-  setupFindInPage,
   showNavigationBlockedMessage,
 } from './windowHelpers';
 import { WindowOptions } from '../../../shared/src/options/model';
@@ -234,8 +233,6 @@ export function setupNativefierWindow(
       goForward();
     }
   });
-
-  setupFindInPage(window);
 
   sendParamsOnDidFinishLoad(options, window);
 }

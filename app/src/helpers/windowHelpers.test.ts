@@ -19,7 +19,6 @@ import {
   injectCSS,
   onFindInPage,
   setIsQuitting,
-  setupFindInPage,
   setupSessionPermissionHandler,
 } from './windowHelpers';
 
@@ -473,25 +472,28 @@ describe('onFindInPage', () => {
     mockStopFindInPage.mockRestore();
   });
 
-  test('searches forward from the top on a fresh query', () => {
+  // Electron's `findNext` means "begin a new finding session": true for the
+  // initial request, false for follow-ups. Getting this backwards means the
+  // first search of a query reports no result at all.
+  test('begins a new finding session for a fresh query', () => {
     onFindInPage(window.webContents, { text: 'needle' });
 
     expect(mockFindInPage).toHaveBeenCalledWith('needle', {
       forward: true,
-      findNext: false,
+      findNext: true,
     });
   });
 
-  test('steps to the previous match when asked to go backwards', () => {
+  test('steps to the previous match without restarting the session', () => {
     onFindInPage(window.webContents, {
       text: 'needle',
       forward: false,
-      findNext: true,
+      findNext: false,
     });
 
     expect(mockFindInPage).toHaveBeenCalledWith('needle', {
       forward: false,
-      findNext: true,
+      findNext: false,
     });
   });
 
@@ -503,20 +505,56 @@ describe('onFindInPage', () => {
   });
 });
 
-describe('setupFindInPage', () => {
-  test('reports match counts back to the page', () => {
-    const window = new BrowserWindow();
-    const mockSend = jest.spyOn(window.webContents, 'send');
 
-    setupFindInPage(window);
-    window.webContents.emit('found-in-page', {}, {
-      activeMatchOrdinal: 3,
-      matches: 17,
+
+describe('setupSessionPermissionHandler with no usable origin', () => {
+  const mockLinkIsInternal = linkIsInternal as jest.Mock;
+  const options = {
+    internalUrls: undefined,
+    targetUrl: 'https://example.com',
+  } as unknown as WindowOptions;
+
+  let window: BrowserWindow;
+  let checkHandler: (
+    webContents: unknown,
+    permission: string,
+    requestingOrigin: string,
+    details: Record<string, unknown>,
+  ) => boolean;
+
+  beforeEach(() => {
+    window = new BrowserWindow();
+    mockLinkIsInternal.mockReset();
+    mockLinkIsInternal.mockReturnValue(true);
+    jest
+      .spyOn(window.webContents.session, 'setPermissionCheckHandler')
+      .mockImplementation((handler) => {
+        checkHandler = handler as unknown as typeof checkHandler;
+      });
+    jest
+      .spyOn(window.webContents.session, 'setPermissionRequestHandler')
+      .mockImplementation();
+    setupSessionPermissionHandler(options, window);
+  });
+
+  test('denies without consulting linkIsInternal, which throws on ""', () => {
+    // Chromium really does call the check handler with an empty origin, and
+    // linkIsInternal blows up on `new URL('')`.
+    expect(checkHandler(null, 'media', '', { isMainFrame: true })).toBe(false);
+    expect(mockLinkIsInternal).not.toHaveBeenCalled();
+  });
+
+  test('falls back to securityOrigin when the origin is empty', () => {
+    checkHandler(null, 'media', '', {
+      isMainFrame: true,
+      securityOrigin: 'https://example.com',
     });
 
-    expect(mockSend).toHaveBeenCalledWith('find-in-page-result', {
-      activeMatchOrdinal: 3,
-      matches: 17,
-    });
+    expect(mockLinkIsInternal).toHaveBeenCalledWith(
+      'https://example.com',
+      'https://example.com',
+      undefined,
+      false,
+    );
   });
 });

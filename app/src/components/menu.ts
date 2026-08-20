@@ -19,14 +19,13 @@ import {
   openExternal,
 } from '../helpers/helpers';
 import * as log from '../helpers/loggingHelper';
+import { findNextInPage, openFindInPage } from './findBar';
 import {
   clearAppData,
-  findNextInPage,
   getCurrentURL,
   goBack,
   goForward,
   goToURL,
-  openFindInPage,
   zoomIn,
   zoomOut,
   zoomReset,
@@ -80,12 +79,16 @@ export function createMenu(
 export function generateMenu(
   options: {
     disableDevTools: boolean;
+    name?: string;
     nativefierVersion: string;
     zoom?: number;
   },
   mainWindow: BrowserWindow,
 ): MenuItemConstructorOptions[] {
-  const { nativefierVersion, zoom, disableDevTools } = options;
+  const { name, nativefierVersion, zoom, disableDevTools } = options;
+  // Not app.name: that is the sanitized, uniquified package name Nativefier
+  // generates (e.g. "myapp-nativefier-ab12cd"), not what the user called it.
+  const appName = name ?? app.name;
   const zoomResetLabel =
     !zoom || zoom === 1.0
       ? 'Reset Zoom'
@@ -399,10 +402,10 @@ export function generateMenu(
 
   if (isOSX()) {
     const appMenu: MenuItemConstructorOptions = {
-      label: app.name,
+      label: appName,
       submenu: [
         {
-          label: `About ${app.name}`,
+          label: `About ${appName}`,
           role: 'about',
         },
         {

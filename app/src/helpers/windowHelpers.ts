@@ -404,25 +404,38 @@ export function setupSessionPermissionHandler(
   options: Pick<WindowOptions, 'internalUrls' | 'targetUrl'>,
   window: BrowserWindow,
 ): void {
-  const originIsAllowed = (url: string): boolean => {
-    const allowed = linkIsInternal(
-      options.targetUrl,
-      url,
-      options.internalUrls,
-      false,
-    );
-    log.debug('session.permission', { url, allowed });
+  const originIsAllowed = (
+    permission: string,
+    ...candidates: (string | undefined)[]
+  ): boolean => {
+    // Chromium calls the check handler with an empty origin for permissions
+    // not tied to a document, and linkIsInternal throws on `new URL('')`.
+    // Take the first candidate that actually carries a URL, and deny outright
+    // when none of them do.
+    const url = candidates.find((candidate) => candidate);
+
+    const allowed = url
+      ? linkIsInternal(options.targetUrl, url, options.internalUrls, false)
+      : false;
+
+    log.debug('session.permission', { permission, url, allowed });
     return allowed;
   };
 
   window.webContents.session.setPermissionCheckHandler(
-    (_webContents, _permission, requestingOrigin) =>
-      originIsAllowed(requestingOrigin),
+    (_webContents, permission, requestingOrigin, details) =>
+      originIsAllowed(
+        permission,
+        requestingOrigin,
+        details.securityOrigin,
+        details.requestingUrl,
+        details.embeddingOrigin,
+      ),
   );
 
   window.webContents.session.setPermissionRequestHandler(
-    (_webContents, _permission, callback, details) => {
-      callback(originIsAllowed(details.requestingUrl));
+    (_webContents, permission, callback, details) => {
+      callback(originIsAllowed(permission, details.requestingUrl));
     },
   );
 }
@@ -430,6 +443,12 @@ export function setupSessionPermissionHandler(
 export type FindInPageRequest = {
   text: string;
   forward?: boolean;
+  /**
+   * Electron's `findNext` means "begin a new finding session", not "go to the
+   * next match": `true` for the initial request of a query, `false` for the
+   * follow-ups that step through its matches. Inverting it makes the first
+   * search of every query silently report nothing.
+   */
   findNext?: boolean;
 };
 
@@ -450,31 +469,6 @@ export function onFindInPage(
 
   webContents.findInPage(request.text, {
     forward: request.forward ?? true,
-    findNext: request.findNext ?? false,
-  });
-}
-
-/** Feeds match counts back to the find bar, so it can show "3/17". */
-export function setupFindInPage(window: BrowserWindow): void {
-  window.webContents.on('found-in-page', (_event, result) => {
-    log.debug('window.webContents.found-in-page', result);
-    window.webContents.send('find-in-page-result', {
-      activeMatchOrdinal: result.activeMatchOrdinal,
-      matches: result.matches,
-    });
-  });
-}
-
-/** Asks the focused window's find bar to open. Wired to the Find… menu item. */
-export function openFindInPage(): void {
-  withFocusedWindow((focusedWindow) => {
-    focusedWindow.webContents.send('find-in-page-open');
-  });
-}
-
-/** Asks the focused window's find bar to step through matches. */
-export function findNextInPage(forward: boolean): void {
-  withFocusedWindow((focusedWindow) => {
-    focusedWindow.webContents.send('find-in-page-next', forward);
+    findNext: request.findNext ?? true,
   });
 }

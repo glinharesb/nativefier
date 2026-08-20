@@ -209,3 +209,19 @@ export function camelCased(str: string): string {
     })
     .join('');
 }
+
+/**
+ * `@electron/packager` 18 widened its `icon` option to `string | string[]`, so
+ * that macOS builds can carry both an `.icns` and an Icon Composer `.icon`.
+ * Nativefier only ever produces a single icon, so read the option back as one
+ * path.
+ */
+export function getSingleIconPath(
+  icon: string | string[] | undefined,
+): string | undefined {
+  if (Array.isArray(icon)) {
+    return icon.length > 0 ? icon[0] : undefined;
+  }
+
+  return icon;
+}

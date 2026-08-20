@@ -2,6 +2,7 @@ import {
   isArgFormatInvalid,
   generateRandomSuffix,
   camelCased,
+  getSingleIconPath,
 } from './helpers';
 
 describe('isArgFormatInvalid', () => {
@@ -80,5 +81,27 @@ describe('camelCased', () => {
 
   test('does not affect non-snake cased strings', () => {
     expect(camelCased('win32options')).toBe('win32options');
+  });
+});
+
+describe('getSingleIconPath', () => {
+  test('passes a lone path straight through', () => {
+    expect(getSingleIconPath('/tmp/icon.icns')).toBe('/tmp/icon.icns');
+  });
+
+  test('takes the first when packager was handed several', () => {
+    // @electron/packager 18 lets macOS carry both an .icns and an .icon.
+    // Nativefier only ever produces one, but the option type allows an array.
+    expect(getSingleIconPath(['/tmp/icon.icns', '/tmp/icon.icon'])).toBe(
+      '/tmp/icon.icns',
+    );
+  });
+
+  test('stays undefined when no icon was set', () => {
+    expect(getSingleIconPath(undefined)).toBeUndefined();
+  });
+
+  test('stays undefined for an empty list', () => {
+    expect(getSingleIconPath([])).toBeUndefined();
   });
 });

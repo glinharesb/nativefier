@@ -1,6 +1,6 @@
 import { CreateOptions } from '@electron/asar';
 import { randomUUID } from 'crypto';
-import * as electronPackager from 'electron-packager';
+import * as electronPackager from '@electron/packager';
 
 export type TitleBarValue =
   'default' | 'hidden' | 'hiddenInset' | 'customButtonsOnHover';

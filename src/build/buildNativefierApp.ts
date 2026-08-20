@@ -1,12 +1,13 @@
 import * as path from 'path';
 
 import * as electronGet from '@electron/get';
-import electronPackager from 'electron-packager';
+import electronPackager from '@electron/packager';
 import * as fs from 'fs-extra';
 import * as log from 'loglevel';
 
 import { convertIconIfNecessary } from './buildIcon';
 import {
+  getSingleIconPath,
   getTempDir,
   hasWine,
   isWindows,
@@ -47,11 +48,12 @@ async function copyIconsIfNecessary(
     if (options.nativefier.tray !== 'false') {
       //tray icon needs to be .png
       log.debug('Copying icon for tray application');
-      if (options.packager.icon) {
+      const macIconPath = getSingleIconPath(options.packager.icon);
+      if (macIconPath) {
         const trayIconFileName = `tray-icon.png`;
         const destIconPath = path.join(appPath, 'icon.png');
         await fs.copy(
-          `${path.dirname(options.packager.icon)}/${trayIconFileName}`,
+          `${path.dirname(macIconPath)}/${trayIconFileName}`,
           destIconPath,
         );
       }
@@ -62,12 +64,12 @@ async function copyIconsIfNecessary(
   }
 
   // windows & linux: put the icon file into the app
-  if (!options.packager.icon) {
+  const iconPath = getSingleIconPath(options.packager.icon);
+  if (!iconPath) {
     log.warn('No icon path found, skipping icon copy');
     return;
   }
 
-  const iconPath = options.packager.icon;
   const destFileName = `icon${path.extname(iconPath)}`;
   const destIconPath = path.join(appPath, destFileName);
 

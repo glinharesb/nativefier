@@ -2,7 +2,7 @@ import * as path from 'path';
 
 import * as log from 'loglevel';
 
-import { isOSX } from '../helpers/helpers';
+import { getSingleIconPath, isOSX } from '../helpers/helpers';
 import {
   convertToPng,
   convertToIco,
@@ -33,7 +33,12 @@ export function convertIconIfNecessary(options: AppOptions): void {
     return;
   }
 
-  const iconPath = options.packager.icon;
+  const iconPath = getSingleIconPath(options.packager.icon);
+
+  if (!iconPath) {
+    log.debug('Option "icon" not set, skipping icon conversion.');
+    return;
+  }
 
   if (options.packager.platform === 'win32') {
     if (iconIsIco(iconPath)) {
@@ -91,7 +96,8 @@ export function convertIconIfNecessary(options: AppOptions): void {
     }
     if (options.nativefier.tray !== 'false') {
       // Use the updated icon path after conversion
-      const finalIconPath = options.packager.icon || iconPath;
+      const finalIconPath =
+        getSingleIconPath(options.packager.icon) ?? iconPath;
       convertToTrayIcon(finalIconPath);
     }
   } catch (err: unknown) {

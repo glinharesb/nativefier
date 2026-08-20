@@ -1,17 +1,18 @@
 import * as log from 'loglevel';
 
 import { inferIcon } from '../../infer/inferIcon';
+import { getSingleIconPath } from '../../helpers/helpers';
 
 type IconParams = {
   packager: {
-    icon?: string;
+    icon?: string | string[];
     targetUrl: string;
     platform?: string;
   };
 };
 
 export async function icon(options: IconParams): Promise<string | undefined> {
-  if (options.packager.icon) {
+  if (getSingleIconPath(options.packager.icon)) {
     log.debug('Got icon from options. Using it, no inferring needed');
     return undefined;
   }

@@ -8,6 +8,7 @@ import {
   RawOptions,
 } from '../../../shared/src/options/model';
 import { dirExists, fileExists } from '../fsHelpers';
+import { getSingleIconPath } from '../helpers';
 import { extractBoolean, extractString } from './plistInfoXMLHelpers';
 import { getOptionsFromExecutable } from './executableHelpers';
 import { parseJson } from '../../utils/parseUtils';
@@ -226,7 +227,13 @@ export function useOldAppOptions(
 
   log.debug('oldApp', oldApp);
 
-  const combinedOptions = { ...rawOptions, ...oldApp.options };
+  const combinedOptions: RawOptions = {
+    ...rawOptions,
+    ...oldApp.options,
+    // packager widened `icon` to `string | string[]`; RawOptions carries the
+    // single path Nativefier actually produces.
+    icon: getSingleIconPath(oldApp.options.icon ?? rawOptions.icon),
+  };
 
   log.debug('Combined options', combinedOptions);
 

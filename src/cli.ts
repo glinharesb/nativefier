@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 
-import electronPackager = require('electron-packager');
+import electronPackager = require('@electron/packager');
 import * as log from 'loglevel';
 import yargs from 'yargs';
 
